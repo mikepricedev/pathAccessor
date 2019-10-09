@@ -1,0 +1,42 @@
+{
+  "name": "path-query",
+  "version": "0.0.1",
+  "description": "Query document paths using PathNotation syntax.",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "mocha --opts ./mocha.opts",
+    "build-ts": "tsc",
+    "build-docs": "rm -rf docs; npx typedoc",
+    "build": "rm -fr build; rm -rf docs; npm run test && { npm run build-docs; npm run build-ts; }",
+    "test-watch": "mocha  --opts ./mocha.opts --watch --watch-extensions ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikepricedev/pathQuery.git"
+  },
+  "keywords": [
+    "PathNotation",
+    "path",
+    "document",
+    "query"
+  ],
+  "author": "Michael Price <mikepricedev@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mikepricedev/pathQuery/issues"
+  },
+  "homepage": "https://github.com/mikepricedev/pathQuery#readme",
+  "devDependencies": {
+    "@types/chai": "^4.2.3",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.7.12",
+    "chai": "^4.2.0",
+    "mocha": "^6.2.1",
+    "ts-node": "^8.4.1",
+    "typedoc": "^0.15.0",
+    "typescript": "^3.6.3"
+  },
+  "dependencies": {
+    "path-notation": "^2.0.1"
+  }
+}
