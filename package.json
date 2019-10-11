@@ -37,6 +37,7 @@
     "typescript": "^3.6.3"
   },
   "dependencies": {
-    "path-notation": "^2.0.1"
+    "key-nodes": "^2.0.1",
+    "path-notation": "^2.1.0"
   }
 }
