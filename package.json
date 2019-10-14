@@ -4,7 +4,7 @@
   "description": "Query document paths using PathNotation syntax.",
   "main": "build/index.js",
   "scripts": {
-    "test": "mocha --opts ./mocha.opts",
+    "test": "./node_modules/mocha/bin/_mocha --opts ./mocha.opts",
     "build-ts": "tsc",
     "build-docs": "rm -rf docs; npx typedoc",
     "build": "rm -fr build; rm -rf docs; npm run test && { npm run build-docs; npm run build-ts; }",
@@ -37,7 +37,7 @@
     "typescript": "^3.6.3"
   },
   "dependencies": {
-    "key-nodes": "^2.0.1",
+    "key-nodes": "^2.0.2",
     "path-notation": "^2.1.0"
   }
 }
