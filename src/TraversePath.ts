@@ -7,8 +7,6 @@ const KEY_VALUE_NODE_ITERATOR:unique symbol = Symbol();
 const FOLLOW_DEPTH:unique symbol = Symbol();
 const ITERATOR:unique symbol = Symbol();
 const A_ROOT_KEY:unique symbol = Symbol();
-const WILD_CARD_KEY_DEPTHS:unique symbol = Symbol();
-
 
 enum TraversePathNextArg {
   continue,
@@ -40,7 +38,6 @@ export default class TraversePath
   private readonly [ITERATOR]:IKVNodeIterableIterator;
   private [FOLLOW_DEPTH]:number = 0;
   private [A_ROOT_KEY]:KeyValueNode;
-  private readonly [WILD_CARD_KEY_DEPTHS] = new Set<number>();
 
   constructor(path:PathNotation | string | number, doc:object | Array<any>) {
 
@@ -132,15 +129,15 @@ export default class TraversePath
       depth,
       parentKeyValueNode,
       path,
-      value:doc,
+      doc,
       isWildcard:false
     }];
 
     for(const kVNodeNextResult of kVNodeIterationOrder.values()) {
       
-      // Get a local scope copy of path and depth
+      // Get a local scope copy of path, doc, and depth
       let path = kVNodeNextResult.path;
-      const depth = kVNodeNextResult.depth;
+      const {depth, doc} = kVNodeNextResult;
       
       let key = path[depth];
             
@@ -148,9 +145,6 @@ export default class TraversePath
 
       // Wild card key start breadth first iteration
       if(key === '*' && docIsObject) {
-
-        // Log path depth of wild card key.
-        this[WILD_CARD_KEY_DEPTHS].add(depth);
 
         for(key of 
           <(string | number)[]><any>TraversePath.keys(doc))
@@ -202,7 +196,7 @@ export default class TraversePath
         case TraversePathNextArg.follow:
 
           // When follow is called on a non-wild card key, ignore.
-          if(this[WILD_CARD_KEY_DEPTHS].has(depth) === false) {
+          if(kVNodeNextResult.isWildcard) {
             
             this[FOLLOW_DEPTH]++;
             
@@ -216,12 +210,12 @@ export default class TraversePath
           }
 
         case TraversePathNextArg.continue:
-          
+
           kVNodeIterationOrder.push({
             depth:nextDepth,
             parentKeyValueNode:keyValueNode,
             path,
-            value,
+            doc:value,
             isWildcard:false
           });
           
