@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import TraversePath from './TraversePath';
 import TraversePathResult from './TraversePathResult';
 import {KeyValueNode} from 'key-nodes';
+import PathNotation from 'path-notation';
 
 
 describe('TraversePath',()=>{
@@ -179,8 +180,7 @@ describe('TraversePath',()=>{
         const path = "foo[*][0].baz";
 
         const terminalKeys:KeyValueNode[] = [];
-        for(const keyValNode of Array.from(new TraversePath(path, doc))) {
-
+        for(const keyValNode of [...new TraversePath(path, doc)]) {
 
           if(keyValNode.isTerminalKey) {
 
@@ -217,6 +217,124 @@ describe('TraversePath',()=>{
         keyValResult = traversePath.next();
         expect(keyValResult.value).property('key').to.equal('*');
         expect(keyValResult.value).property('value').to.equal(doc.foo["*"]);
+
+      });
+
+      it(`Iterates values undefined when an ancestor was undefined or not an
+          object.`,()=>
+      {
+
+        const doc = {
+          foo:{}
+        };
+
+        const path = "foo.bar[0].baz";
+
+        const traversePath = new TraversePath(path, doc);
+
+        let keyValResult = traversePath.next();
+        expect(keyValResult.value).property('key').to.equal('foo');
+        expect(keyValResult.value).property('value').to.equal(doc.foo);
+        
+        keyValResult = traversePath.next();
+        expect(keyValResult.value).property('key').to.equal('bar');
+        expect(keyValResult.value).property('value').to.be.undefined;
+
+        keyValResult = traversePath.next();
+        expect(keyValResult.value).property('key').to.equal(0);
+        expect(keyValResult.value).property('value').to.be.undefined;
+
+        keyValResult = traversePath.next();
+        expect(keyValResult.value).property('key').to.equal('baz');
+        expect(keyValResult.value).property('value')
+          .to.be.undefined;
+
+        expect(traversePath.next()).property('done').to.be.true;
+
+      });
+
+      it(`Stops iteration when wildcard key has no key literals defined.`,
+        ()=>
+      {
+
+        const doc = {
+          foo:{}
+        };
+
+        const path = "foo[*][0].baz"
+
+        const traversePath = new TraversePath(path, doc);
+
+        let keyValResult = traversePath.next();
+        expect(keyValResult.value).property('key').to.equal('foo');
+        expect(keyValResult.value).property('value').to.equal(doc.foo);
+        
+        expect(traversePath.next()).property('done').to.be.true;
+        
+      });
+
+      it(`Returns an Array of KeyValueNodes where wildcard key has no key
+          literals defined do to non-object or null values.`,()=>
+      {
+
+        const doc = [
+          {foo:[{baz:Symbol()}]},
+          {foo:null},
+          {foo:[{baz:Symbol()}]},
+          {foo:12},
+          {foo:[{baz:Symbol()}]},
+        ]
+
+        const path = new PathNotation("[*]foo[*].baz");
+        const depth = path.length - 1;
+
+        const traversePath = new TraversePath(path, doc);
+
+        let resultValues = [];
+        let keyValResult = traversePath.next();
+        while(keyValResult.done === false) {
+
+          if(keyValResult.value.depth === depth) {
+            resultValues.push(keyValResult.value);
+          }
+
+          keyValResult = traversePath.next();
+        
+        }
+        
+        expect(resultValues).to.have.lengthOf(3);
+
+        expect(resultValues[0].value).to.equal(doc[0].foo[0].baz);
+        expect(resultValues[1].value).to.equal(doc[2].foo[0].baz);
+        expect(resultValues[2].value).to.equal(doc[4].foo[0].baz);
+
+        const couldNotFollow = keyValResult.value;
+        
+        expect(couldNotFollow).to.have.lengthOf(2);
+
+        expect(couldNotFollow[0].value).to.equal(doc[1].foo);
+        expect(couldNotFollow[1].value).to.equal(doc[3].foo);
+
+      });
+
+      it(`Returns an Array of KeyValueNodes where wildcard key has no key
+          literals defined do to empty objects.`,()=>
+      {
+
+        const doc = {foo:[]};
+
+        const path = new PathNotation("foo[*].baz");
+        const depth = path.length - 1;
+
+        const traversePath = new TraversePath(path, doc);
+
+        while(traversePath.next().done === false);
+
+        const couldNotFollow = traversePath.next().value;
+        
+        expect(couldNotFollow).to.have.lengthOf(1);
+
+        expect(couldNotFollow[0].value).to.equal(doc.foo);
 
       });
 
@@ -398,7 +516,7 @@ describe('TraversePath',()=>{
           const wildcardKeys:KeyValueNode[] = [];
 
           let traversePathResult = traversePath.next();
-          while(!traversePathResult.done) {
+          while(traversePathResult.done === false) {
 
 
             if(traversePathResult.isWildcard) {
@@ -535,11 +653,11 @@ describe('TraversePath',()=>{
           expect(traversePath).property('followDepth').to.equal(2);
           
           keyValResult = traversePath.return(); // foo2.bar3
-          expect(keyValResult.value.value).to.equal(doc.foo2.bar3);
+          expect((<any>keyValResult.value).value).to.equal(doc.foo2.bar3);
           expect(traversePath).property('followDepth').to.equal(1);
 
           keyValResult = traversePath.return(); // foo3
-          expect(keyValResult.value.value).to.equal(doc.foo3);
+          expect((<any>keyValResult.value).value).to.equal(doc.foo3);
           expect(traversePath).property('followDepth').to.equal(0);
 
 

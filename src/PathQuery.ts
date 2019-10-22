@@ -11,14 +11,33 @@ export default class PathQuery {
 
   }
 
+  static *read<Tvalue = any,Tkey extends string | number = string | number>(
+    path:string | number | PathNotation, doc:object | Array<any>)
+      :IterableIterator<KeyValueNode<Tkey, Tvalue>>
+  {
+    
+    const pathNotation = new PathNotation(path);
+    const depth = pathNotation.length - 1;
+
+    for(const keyValueNode of new TraversePath(pathNotation, doc)) {
+
+      if(keyValueNode.depth === depth) {
+        
+        yield <KeyValueNode<Tkey, Tvalue>>keyValueNode;
+      
+      }
+
+    }
+  
+  }
+
   /**
-   * 
+   * Convenience method that yields the values instead of the KeyValueNodes.
    */
-  static *getValue<Tvalue = any>(path:string | number | PathNotation,
+  static *readValue<Tvalue = any>(path:string | number | PathNotation,
     doc:object | Array<any>):IterableIterator<Tvalue>
   {
-
-    for(const keyValueNode of this.getKeyValueNodes(path, doc)) {
+    for(const keyValueNode of this.read(path, doc)) {
 
       yield <Tvalue>keyValueNode.value;
 
@@ -26,24 +45,17 @@ export default class PathQuery {
   
   }
 
-  static *setValue<Tvalue = any, Tkey extends string | number = string | number>
-    (keyValueNode:KeyValueNode<Tkey, Tvalue>, doc:object | Array<any>)
-    : IterableIterator<KeyValueNode<Tkey, Tvalue>>;
-  static *setValue<Tvalue = any, Tkey extends string | number = string | number>
-    (value:Tvalue, path:string | number | PathNotation, doc:object | Array<any>)
-      : IterableIterator<KeyValueNode<Tkey, Tvalue>>;
-  static *setValue<Tvalue = any, Tkey extends string | number = string | number>
-    (value:Tvalue | KeyValueNode<Tkey, Tvalue>, 
-      path:string | number | PathNotation | object | Array<any>,
-      doc?:object | Array<any>)
-      : IterableIterator<KeyValueNode<Tkey, Tvalue>>
+  static *update<Tvalue = any, Tkey extends string | number = string | number>
+    (path:string | number | PathNotation | KeyValueNode<Tkey, Tvalue>,
+      doc:object | Array<any>): IterableIterator<KeyValueNode<Tkey, Tvalue>>
   {
 
-    if(value instanceof KeyValueNode) {
+    if(path instanceof KeyValueNode) {
 
       // NOTE: May or may not be KeyValueNode.isTerminalKey === true
-      const terminalKVNode = value;
-      doc = <object | Array<any>>path;
+      const terminalKVNode = path;
+
+      yield terminalKVNode;
 
       const kVNodeIter = terminalKVNode.pathToKey(true);
       let kVNodeIterResult = kVNodeIter.next();
@@ -65,16 +77,72 @@ export default class PathQuery {
         childKVNodeResult = kVNodeIter.next();
 
       }
-
+      
       doc[<string | number>terminalKVNode.key] = terminalKVNode.value;
+    
+    } else {
+      
+      for(const kVNode of this.read<Tvalue, Tkey>(<any>path, doc)) 
+      {
+
+        const keepHistory = kVNode.keepHistory;
+
+        if(keepHistory === false) {
+
+          kVNode.keepHistory = 1;
+          
+        } else if(keepHistory !== true) {
+
+          kVNode.keepHistory = keepHistory + 1;
+
+        }
+        
+        yield* this.update(kVNode,doc);
+
+      }
+
+    }
+
+  } 
+
+  static *delete<Tvalue = any, Tkey extends string | number = string | number>
+    (path:string | number | PathNotation | KeyValueNode<Tkey, Tvalue>,
+      doc:object | Array<any>): IterableIterator<KeyValueNode<Tkey, Tvalue>>
+  {
+
+    if(path instanceof KeyValueNode) {
+
+      // NOTE: May or may not be KeyValueNode.isTerminalKey === true
+      const terminalKVNode = path;
 
       yield terminalKVNode;
 
-    } else {
-      
-      for(const kVNode of this.getKeyValueNodes<Tkey, Tvalue>(<any>path, doc)) 
-      {
+      const kVNodeIter = terminalKVNode.pathToKey(true);
+      let kVNodeIterResult = kVNodeIter.next();
+      let childKVNodeResult = kVNodeIter.next();
 
+      while(kVNodeIterResult.value !== terminalKVNode) {
+
+        const key = kVNodeIterResult.value.key;
+
+        // Value DNE on path. No need to delete, return
+        if(!(key in doc) || typeof doc[key] !== 'object' || doc[key] === null) {
+
+          return;
+
+        }
+
+        doc = doc[key];
+        kVNodeIterResult = childKVNodeResult;
+        childKVNodeResult = kVNodeIter.next();
+
+      }
+      
+      delete doc[<string | number>terminalKVNode.key];
+
+    } else {
+
+      for(const kVNode of this.read<Tvalue, Tkey>(path,doc)) {
 
         const keepHistory = kVNode.keepHistory;
 
@@ -88,37 +156,11 @@ export default class PathQuery {
 
         }
 
-        kVNode.value = value;
+        yield* this.delete(kVNode,doc);
 
-        yield* this.setValue(kVNode,doc);
+      };
 
-      }
-
-    }
-
-  } 
-
-  static *getKeyValueNodes<Tkey extends string | number = string | number,
-    Tvalue = any>(path:string | number | PathNotation, doc:object | Array<any>)
-      :IterableIterator<KeyValueNode<Tkey, Tvalue>>
-  {
-    
-    for(const keyValueNode of this.keyValueNodesAlongPath(path, doc)) {
-
-      if(keyValueNode.isTerminalKey) {
-        
-        yield <KeyValueNode<Tkey, Tvalue>>keyValueNode;
-      
-      }
-
-    }
-  }
-
-  static keyValueNodesAlongPath(path:PathNotation | string | number,
-    doc:object | Array<any>):TraversePath
-  {
-
-    return new TraversePath(path, doc);
+    }    
 
   }
 

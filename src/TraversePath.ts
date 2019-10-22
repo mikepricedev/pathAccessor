@@ -3,6 +3,7 @@ import {KeyValueNode} from 'key-nodes';
 import TraversePathResult from './TraversePathResult';
 
 const CREATE_ROOT_KEY:unique symbol = Symbol();
+const COULD_NOT_FOLLOW:unique symbol = Symbol();
 const KEY_VALUE_NODE_ITERATOR:unique symbol = Symbol();
 const FOLLOW_DEPTH:unique symbol = Symbol();
 const ITERATOR:unique symbol = Symbol();
@@ -32,9 +33,10 @@ interface IKVNodeIterableIterator
  * that depth.
  */
 export default class TraversePath
-  implements Iterator <KeyValueNode, undefined, boolean>
+  implements Iterator <KeyValueNode, KeyValueNode[], boolean>
 {
 
+  private readonly [COULD_NOT_FOLLOW]:KeyValueNode[] = [];
   private readonly [ITERATOR]:IKVNodeIterableIterator;
   private [FOLLOW_DEPTH]:number = 0;
   private [A_ROOT_KEY]:KeyValueNode;
@@ -49,6 +51,15 @@ export default class TraversePath
   get followDepth():number {
 
     return this[FOLLOW_DEPTH];
+
+  }
+
+  /**
+   * KeyValueNode breakpoints where wildcard keys had no key literals on doc.
+   */
+  get couldNotFollow():KeyValueNode[] {
+
+    return [...this[COULD_NOT_FOLLOW]];
 
   }
 
@@ -84,7 +95,7 @@ export default class TraversePath
     return result.done === false ? 
       new TraversePathResult(false, result.value[0], result.value[1])
       :
-      new TraversePathResult(true, undefined, null);
+      new TraversePathResult(true, [...this[COULD_NOT_FOLLOW]], null);
 
   }
   
@@ -109,7 +120,7 @@ export default class TraversePath
     return result.done === false ? 
       new TraversePathResult(false, result.value[0], result.value[1])
       :
-      new TraversePathResult(true, undefined, null);
+      new TraversePathResult(true, [...this[COULD_NOT_FOLLOW]], null);
 
 
   }
@@ -120,7 +131,7 @@ export default class TraversePath
 
     // End of path
     if(path.length === depth) {
-    
+      
       return;
     
     }
@@ -144,11 +155,28 @@ export default class TraversePath
       const docIsObject =  typeof doc === 'object' && doc !== null;
 
       // Wild card key start breadth first iteration
-      if(key === '*' && docIsObject) {
+      if(key === '*') {
 
-        for(key of 
-          <(string | number)[]><any>TraversePath.keys(doc))
-        {
+        if(!docIsObject) {
+
+          this[COULD_NOT_FOLLOW].push(kVNodeNextResult.parentKeyValueNode);
+          continue;
+
+        }
+
+        const keysIter = TraversePath.keys(doc);
+        let keysIterResult = keysIter.next();
+
+        if(keysIterResult.done === true) {
+
+          this[COULD_NOT_FOLLOW].push(kVNodeNextResult.parentKeyValueNode);
+          continue;
+
+        }
+
+        do {
+
+          key = keysIterResult.value;
 
           // Escape wildcard key literals
           key = key === "*" ? `\\${key}` : key;
@@ -164,7 +192,9 @@ export default class TraversePath
             isWildcard:true
           });
 
-        }
+          keysIterResult = keysIter.next();
+
+        } while(!keysIterResult.done);
 
         continue;
 
