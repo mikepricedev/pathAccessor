@@ -1,11 +1,13 @@
 import {expect} from 'chai';
-import PathQuery from './PathQuery';
+import PathQuery from './PathAccessor';
+import PathNotation from 'path-notation';
+import { KeyValueNode } from 'key-nodes';
 
 describe('PathQuery',()=>{
 
   describe('Static Methods',()=>{
 
-    describe('read',()=>{
+    describe('get',()=>{
 
       it(`Returns IterableIterator of terminal KeyValueNodes at a path in a
           doc.`,()=>
@@ -19,7 +21,7 @@ describe('PathQuery',()=>{
 
         const path = "foo.bar[0].baz";
   
-        const terminalKeyIter = PathQuery.read(path, doc);
+        const terminalKeyIter = PathQuery.get(path, doc);
 
         const result = terminalKeyIter.next();
         const keyValueNode = result.value;
@@ -43,15 +45,38 @@ describe('PathQuery',()=>{
 
         const path = "foo[*][0].baz";
   
-        const terminalKeyIter = PathQuery.read(path, doc);
+        const terminalKeyIter = PathQuery.get(path, doc);
 
         expect(terminalKeyIter.next()).property('done').to.be.true;
 
       });
 
+      it(`Returns an Array of KeyValueNodes where wildcard key has no key
+          literals defined do to non-object or null values.`,()=>
+      {
+
+        const doc = {foo:[]};
+
+        const path = new PathNotation("foo[*].baz");
+
+        const getPath = PathQuery.get(path, doc);
+
+        let couldNotgetResult = getPath.next();
+        while(!couldNotgetResult.done) {
+          couldNotgetResult = getPath.next();
+        };
+
+        const couldNotget = couldNotgetResult.value;
+        
+        expect(couldNotget).to.have.lengthOf(1);
+
+        expect(couldNotget[0].value).to.equal(doc.foo);
+
+      });
+
     });
 
-    describe('readValue',()=>{
+    describe('getValue',()=>{
 
       it(`Returns IterableIterator of terminal values at a path in a
           doc.`,()=>
@@ -65,7 +90,7 @@ describe('PathQuery',()=>{
 
         const path = "foo.bar[0].baz";
   
-        const terminalKeyIter = PathQuery.readValue(path, doc);
+        const terminalKeyIter = PathQuery.getValue(path, doc);
 
         const result = terminalKeyIter.next();
         const value = result.value;
@@ -92,7 +117,7 @@ describe('PathQuery',()=>{
 
         const path = "foo[*][0].baz";
   
-        const terminalKeyIter = PathQuery.readValue(path, doc);
+        const terminalKeyIter = PathQuery.getValue(path, doc);
 
         let value = terminalKeyIter.next().value;
 
@@ -121,7 +146,7 @@ describe('PathQuery',()=>{
 
         const path = "foo.bar[0].baz";
   
-        const terminalKeyIter = PathQuery.readValue(path, doc);
+        const terminalKeyIter = PathQuery.getValue(path, doc);
 
         const result = terminalKeyIter.next();
         const value = result.value;
@@ -143,7 +168,7 @@ describe('PathQuery',()=>{
 
         const path = "foo[*][0].baz";
   
-        const terminalKeyIter = PathQuery.readValue(path, doc);
+        const terminalKeyIter = PathQuery.getValue(path, doc);
 
         expect(terminalKeyIter.next()).property('done').to.be.true;
 
@@ -151,7 +176,7 @@ describe('PathQuery',()=>{
 
     });
 
-    describe('update',()=>{
+    describe('set',()=>{
 
       it('Returns an IterableIterator of KeyValueNodes to set on doc.',()=>{
 
@@ -165,10 +190,10 @@ describe('PathQuery',()=>{
 
           const value = Symbol();
 
-          const iter = PathQuery.update(path, doc);
+          const iter = PathQuery.set(path, doc, value);
           const {value:keyValNode} = iter.next();
 
-          expect(keyValNode.path.toString()).to.equal(path);
+          expect((<KeyValueNode>keyValNode).path.toString()).to.equal(path);
 
       });
 
@@ -184,12 +209,12 @@ describe('PathQuery',()=>{
 
         const value = Symbol();
 
-        const iter = PathQuery.update(path, doc);
+        const iter = PathQuery.set(path, doc, value);
         
         let result = iter.next();
         expect(doc.foo.bar[0].baz).to.not.equal(value);
 
-        result.value.value = value;
+        (<KeyValueNode>result.value).value = value;
         
         iter.next();
         expect(doc.foo.bar[0].baz).to.equal(value);
@@ -208,22 +233,22 @@ describe('PathQuery',()=>{
           }
         };
 
-        const updates:symbol[] = [];
+        const sets:symbol[] = [];
 
         const path = "foo[*][0].baz";
 
-        const iter = PathQuery.update(path, doc);
+        const iter = PathQuery.set(path, doc, undefined);
 
         for(const kVNode of iter) {
 
           kVNode.value = Symbol();
-          updates.push(kVNode.value);
+          sets.push(kVNode.value);
 
         }
 
-        expect(doc.foo.bar1[0].baz).to.equal(updates[0]);
-        expect(doc.foo.bar2[0].baz).to.equal(updates[1]);
-        expect(doc.foo.bar3[0].baz).to.equal(updates[2]);
+        expect(doc.foo.bar1[0].baz).to.equal(sets[0]);
+        expect(doc.foo.bar2[0].baz).to.equal(sets[1]);
+        expect(doc.foo.bar3[0].baz).to.equal(sets[2]);
 
       });
 

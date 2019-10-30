@@ -1,6 +1,6 @@
 src
 mocha.opts
 tsconfig.json
-pathQuery.code-workspace
+pathAccessor.code-workspace
 .vscode
 examples.ts

@@ -203,7 +203,7 @@ export default class TraversePath
       // Unescape wild card key
       key = key === "\\*" ? "*" : key;
       
-      const value = docIsObject ? doc[key] : undefined;
+      let value = docIsObject ? doc[key] : undefined;
 
       const keyValueNode = depth === 0 ? 
         this[CREATE_ROOT_KEY](key, value)
@@ -213,6 +213,12 @@ export default class TraversePath
       const nextResult = yield [keyValueNode, kVNodeNextResult.isWildcard];
       
       const nextDepth = depth + 1;
+
+      if(value !== keyValueNode.value) {
+
+        value = keyValueNode.value;
+
+      }
 
       // End of path
       if(nextDepth === path.length) {
@@ -286,8 +292,8 @@ export default class TraversePath
   }
 
   // Static methods
-  static *keys<Tdoc extends object | Array<any>, Tkey extends keyof Tdoc>(
-    doc:Tdoc):IterableIterator<Tkey>
+  static *keys<TDoc extends object | Array<any>, TKey extends keyof TDoc>(
+    doc:TDoc):IterableIterator<TKey>
   {
 
     if(Array.isArray(doc)) {
@@ -295,7 +301,7 @@ export default class TraversePath
       let i = 0;
       for(const value of (<Array<any>>doc).values()) {
 
-        yield <Tkey>i++;
+        yield <TKey>i++;
 
       }
 
@@ -307,7 +313,7 @@ export default class TraversePath
           && Object.prototype.hasOwnProperty.call(doc, key))
         {
 
-          yield <Tkey>key
+          yield <TKey>key
 
         }
 

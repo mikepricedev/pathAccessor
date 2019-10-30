@@ -24,15 +24,16 @@
     "target": "ES2016"
   },
   "typedocOptions": {
-    "entryPoint":"PathQuery",
+    "entryPoint":"PathAccessor",
     "excludeExternals": true,
     "excludeNotExported": true,
     "excludePrivate": true,
     "excludeProtected": false,
     "gitRevision": null,
     "hideGenerator": true,
+    "ignoreCompilerErrors": true,
     "mode": "file",
-    "name": "Path Query",
+    "name": "Path Accessor",
     "out": "docs",
     "readme": "none",
     "theme": "minimal"

@@ -1,11 +1,11 @@
 {
-  "name": "path-query",
+  "name": "path-accessor",
   "version": "0.0.1",
-  "description": "Query document paths using PathNotation syntax.",
+  "description": "Gets and sets values on document paths using PathNotation syntax.",
   "main": "build/index.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/_mocha --opts ./mocha.opts",
-    "build-ts": "tsc",
+    "build-ts": "node_modules/typescript/bin/tsc",
     "build-docs": "rm -rf docs; npx typedoc",
     "build": "rm -fr build; rm -rf docs; npm run test && { npm run build-docs; npm run build-ts; }",
     "test-watch": "mocha  --opts ./mocha.opts --watch --watch-extensions ts"
