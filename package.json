@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mikepricedev/pathQuery.git"
+    "url": "git+https://github.com/mikepricedev/pathAccessor.git"
   },
   "keywords": [
     "PathNotation",
@@ -23,9 +23,9 @@
   "author": "Michael Price <mikepricedev@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/mikepricedev/pathQuery/issues"
+    "url": "https://github.com/mikepricedev/pathAccessor/issues"
   },
-  "homepage": "https://github.com/mikepricedev/pathQuery#readme",
+  "homepage": "https://github.com/mikepricedev/pathAccessor#readme",
   "devDependencies": {
     "@types/chai": "^4.2.3",
     "@types/mocha": "^5.2.7",
