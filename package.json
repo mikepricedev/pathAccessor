@@ -1,6 +1,6 @@
 {
   "name": "path-accessor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Gets and sets values on document paths using PathNotation syntax.",
   "main": "build/index.js",
   "scripts": {
