@@ -138,7 +138,7 @@ describe('PathQuery',()=>{
 
       });
 
-      it(`Returns undefined when path is not defined on doc.`,()=>{
+      it(`Returns undefined when path is not defined on doc.`,()=> {
 
         const doc = {
           foo:{}
@@ -169,6 +169,52 @@ describe('PathQuery',()=>{
         const path = "foo[*][0].baz";
   
         const terminalKeyIter = PathQuery.getValue(path, doc);
+
+        expect(terminalKeyIter.next()).property('done').to.be.true;
+
+      });
+
+      it(`Returns optional default value from optional 3rd arg when value is
+          undefined.`, ()=>
+      {
+
+        const doc = {
+          foo:{}
+        };
+
+        const path = "foo.bar[0].baz";
+        
+        const defaultValue = Symbol();
+
+        const terminalKeyIter = PathQuery.getValue(path, doc, defaultValue);
+
+        const result = terminalKeyIter.next();
+        const value = result.value;
+
+        expect(value).to.equal(defaultValue);
+
+        expect(terminalKeyIter.next()).property('done').to.be.true;
+
+      });
+
+      it(`Returns default value from optional 3rd arg when wildcard key is used
+          and no key literals are defined at the wildcard key.`, ()=>
+      {
+
+        const doc = {
+          foo:{}
+        };
+
+        const path = "foo[*][0].baz";
+
+        const defaultValue = Symbol();
+  
+        const terminalKeyIter = PathQuery.getValue(path, doc, defaultValue);
+
+        const result = terminalKeyIter.next();
+        const value = result.value;
+
+        expect(value).to.equal(defaultValue);
 
         expect(terminalKeyIter.next()).property('done').to.be.true;
 

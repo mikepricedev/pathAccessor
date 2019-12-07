@@ -156,11 +156,41 @@ export default class PathAccessor<TValue = any,
    * Convenience method that yields the values instead of the KeyValueNodes.
    */
   static *getValue<TValue = any>(path:string | number | PathNotation,
-    doc:object | Array<any>):IterableIterator<TValue>
+    doc:object | Array<any>, defaultValue?:TValue):IterableIterator<TValue>
   {
-    for(const keyValueNode of this.get(path, doc)) {
+    
+    const hasDefault = defaultValue !== undefined;
+
+    const getIter = this.get(path, doc);
+    let getNextResult:IteratorResult<KeyValueNode<string | number,
+      TValue>, KeyValueNode[]>;
+    
+    let numYield = 0;
+
+    while(!(getNextResult = getIter.next()).done) {
+
+      const keyValueNode = 
+        <KeyValueNode<string | number, TValue>>getNextResult.value;
+
+      if(keyValueNode.value === undefined && hasDefault) {
+
+        yield defaultValue;
+        numYield++;
+        continue;
+
+      }
 
       yield <TValue>keyValueNode.value;
+      numYield++;
+
+    }
+
+    const doneValue = <KeyValueNode<string | number, any,
+      KeyValueNode<string | number, any, any>>[]>getNextResult.value;
+
+    if(doneValue.length > 0 && hasDefault && numYield === 0) {
+      
+      yield defaultValue;
 
     }
   

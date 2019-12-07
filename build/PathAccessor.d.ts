@@ -17,6 +17,6 @@ export default class PathAccessor<TValue = any, TKey extends string | number = s
     /**
      * Convenience method that yields the values instead of the KeyValueNodes.
      */
-    static getValue<TValue = any>(path: string | number | PathNotation, doc: object | Array<any>): IterableIterator<TValue>;
+    static getValue<TValue = any>(path: string | number | PathNotation, doc: object | Array<any>, defaultValue?: TValue): IterableIterator<TValue>;
 }
 export {};
